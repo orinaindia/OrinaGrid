@@ -4,7 +4,7 @@
  * What the site's forms are made of: labelled fields that wire their own ids, errors and hints,
  * the state and district pickers, the consent line, the hidden field for bots, and `send`.
  */
-import { cloneElement, useRef, type ReactElement, type ReactNode } from 'react';
+import { cloneElement, useEffect, useRef, type ReactElement, type ReactNode } from 'react';
 import type { Enquiry, FieldErrors } from '@/lib/enquiry';
 import { districtsOf, STATES } from '@/lib/geo';
 import { SITE } from '@/lib/site';
@@ -92,15 +92,36 @@ export function PinBoxes({
   describedBy?: string | undefined;
 }) {
   const boxes = useRef<(HTMLInputElement | null)[]>([]);
-  const focus = (i: number) => boxes.current[Math.max(0, Math.min(5, i))]?.focus();
+  // the PIN as last set: events that follow one another faster than a render read this, not `value`
+  const latest = useRef(value);
+  useEffect(() => {
+    latest.current = value;
+  }, [value]);
 
+  // after React has drawn the change, so the box is there with its digit
+  const focus = (i: number) =>
+    requestAnimationFrame(() => boxes.current[Math.max(0, Math.min(5, i))]?.focus());
+  const set = (next: string) => {
+    latest.current = next;
+    onChange(next);
+  };
+
+  /** Digits typed or pasted at box `at`: over the ones there, keeping those after them. */
   const put = (at: number, typed: string) => {
     const digits = typed.replace(/\D/g, '');
     if (!digits) return;
-    // over the digits from `at`, keeping the ones after them
-    const next = (value.slice(0, at) + digits + value.slice(at + digits.length)).slice(0, 6);
-    onChange(next);
+    const cur = latest.current;
+    set((cur.slice(0, at) + digits + cur.slice(at + digits.length)).slice(0, 6));
     focus(at + digits.length);
+  };
+
+  /** Box `i` emptied (Backspace, or a phone keyboard's delete, which sends no key event). */
+  const cut = (i: number) => {
+    const cur = latest.current;
+    const at = cur[i] ? i : i - 1;
+    if (at < 0) return;
+    set(cur.slice(0, at) + cur.slice(at + 1));
+    focus(at);
   };
 
   return (
@@ -117,8 +138,14 @@ export function PinBoxes({
           aria-label={`Digit ${i + 1} of 6`}
           aria-invalid={invalid}
           aria-describedby={describedBy}
-          // a box takes its digit (and a paste or autofill spreads from it)
-          onChange={(e) => put(Math.min(i, value.length), e.target.value.replace(value[i] ?? '', ''))}
+          onChange={(e) => {
+            const typed = e.target.value;
+            if (!typed) return cut(i);
+            // a box that had a digit holds it and the new one: keep the new
+            const had = latest.current[i] ?? '';
+            const fresh = typed.length > 1 && had ? typed.replace(had, '') : typed;
+            put(Math.min(i, latest.current.length), fresh);
+          }}
           onPaste={(e) => {
             e.preventDefault();
             put(0, e.clipboardData.getData('text'));
@@ -126,19 +153,16 @@ export function PinBoxes({
           onKeyDown={(e) => {
             if (e.key === 'Backspace') {
               e.preventDefault();
-              const cut = value[i] ? i : i - 1;
-              if (cut < 0) return;
-              onChange(value.slice(0, cut) + value.slice(cut + 1));
-              focus(cut);
+              cut(i);
             } else if (e.key === 'ArrowLeft') focus(i - 1);
             else if (e.key === 'ArrowRight') focus(i + 1);
           }}
           onFocus={(e) => {
             // never a gap: a box past the typed digits sends the cursor to the first empty one
-            if (i > value.length) focus(value.length);
+            if (i > latest.current.length) focus(latest.current.length);
             else e.target.select();
           }}
-          className={`t-num aspect-[4/5] w-full min-w-0 rounded-2xl border bg-surface text-center font-display text-[clamp(1.4rem,4vw,1.9rem)] font-medium text-ink outline-none transition-[border-color,box-shadow] duration-300 focus:border-accent focus:shadow-[0_0_0_4px_var(--color-accent-wash)] ${
+          className={`t-num aspect-[4/5] w-full min-w-0 rounded-2xl border bg-surface text-center font-display text-[clamp(1.4rem,4vw,1.9rem)] font-medium text-ink caret-accent outline-none transition-[border-color,box-shadow] duration-300 focus:border-accent focus:shadow-[0_0_0_4px_var(--color-accent-wash)] ${
             invalid ? 'border-neg' : value[i] ? 'border-ink/40' : 'border-rule-strong'
           }`}
         />
