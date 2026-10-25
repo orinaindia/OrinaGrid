@@ -1,26 +1,270 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ Orina's design tokens
+   Taken from orina.in (css/theme.css): warm paper, ink, one ultramarine accent, mono labels.
+   Solar adds one warm note, the sun (Orina's own warn amber, used for light, never for errors). */
+@theme {
+  --color-paper: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-sunk: #f1efe9;
+  --color-ink: #0b0b0d;
+  --color-ink-2: #16171a;
+  --color-slate: #62697a;
+  --color-muted: #9198a6;
+  --color-rule: #e3e1da;
+  --color-rule-strong: #cfccc2;
+  --color-accent: #2340e8;
+  --color-accent-deep: #1b33bd;
+  --color-accent-wash: #e9ecff;
+  --color-pos: #1c7a5e;
+  --color-sun: #e8a33d;
+  --color-sun-deep: #b8791a;
+  --color-neg: #c0392b;
+  --color-on-ink: #f7f6f2;
+  --color-on-ink-soft: #8d93a1;
+
+  --font-display: var(--font-instrument), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, 'SF Mono', monospace;
+
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --fs-display-xl: clamp(2.9rem, 8.4vw, 8.25rem);
+  --fs-display: clamp(2.3rem, 5.4vw, 5rem);
+  --fs-h2: clamp(1.85rem, 3.6vw, 3.2rem);
+  --fs-h3: clamp(1.15rem, 1.7vw, 1.5rem);
+  --fs-lead: clamp(1.05rem, 1.45vw, 1.3rem);
+  --sp-section: clamp(4.5rem, 9vw, 8.5rem);
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+  --maxw: 1360px;
+  --header-h: 72px;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-paper);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-ink);
+}
+
+/* Lenis (smooth scroll) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ type */
+.t-display-xl {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-xl);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-weight: 500;
+}
+.t-display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+}
+.t-h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+}
+.t-h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+.t-lead {
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+  color: var(--color-slate);
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+.t-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ layout */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.section {
+  padding-block: var(--sp-section);
+}
+
+/* Split text lines rise from behind a mask (SplitText adds .line) */
+/* SplitText's line masks: room below the line for g, p and y, given back so the layout holds */
+[data-split] > div {
+  padding-bottom: 0.16em;
+  margin-bottom: -0.16em;
+}
+
+/* Things that animate in start hidden only when JS runs (no flash, no lost content without JS) */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus that can be seen, on every control */
+/* in the base layer, so a field that shows focus its own way (outline-none) can say so */
+@layer base {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+/* Marquee (pure CSS, paused on hover, off for reduced motion) */
+/* the popup's pin, hovering over a roof */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee 38s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ------------------------------------------------------------------ range (the savings slider)
+   A big thumb for fingers; the track fills up to the value (--fill, set from the value). */
+.range {
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-sun) var(--fill, 50%),
+    var(--track, rgb(255 255 255 / 0.16)) var(--fill, 50%)
+  );
+  cursor: pointer;
+}
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-on-ink);
+  border: 6px solid var(--color-sun);
+  box-shadow: 0 0 0 8px rgb(232 163 61 / 0.18);
+  transition: transform 0.3s var(--ease-out-expo);
+}
+.range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-on-ink);
+  border: 6px solid var(--color-sun);
+  box-shadow: 0 0 0 8px rgb(232 163 61 / 0.18);
+}
+/* a scroll area's bar, thin and quiet, there only when something scrolls */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule-strong) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-rule-strong);
+}
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.range-light {
+  --track: var(--color-rule);
+}
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+/* ------------------------------------------------------------------ FAQ: answers open smoothly where the
+   browser can animate to auto height (::details-content); elsewhere they simply open */
+:root {
+  interpolate-size: allow-keywords;
+}
+.faq::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 0.6s var(--ease-out-expo),
+    content-visibility 0.6s allow-discrete;
+}
+.faq[open]::details-content {
+  height: auto;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
 }
